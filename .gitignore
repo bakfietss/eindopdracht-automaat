@@ -1,0 +1,30 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### IntelliJ ###
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+### Eclipse / VS Code ###
+.classpath
+.project
+.settings/
+.vscode/
+bin/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Uploads (runtime-gegenereerde bestanden, niet committen) ###
+uploads/**/*.pdf
+uploads/**/*.png
+uploads/**/*.jpg
+!uploads/.gitkeep
+!uploads/registration/.gitkeep
+
+### Logs ###
+*.log
