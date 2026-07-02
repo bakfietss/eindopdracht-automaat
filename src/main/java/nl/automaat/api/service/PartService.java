@@ -19,7 +19,7 @@ public class PartService {
     }
 
     public List<PartResponseDto> getAll() {
-        return partRepository.findAll().stream().map(this::toDto).toList();
+        return partRepository.findAll().stream().map(PartService::toDto).toList();
     }
 
     public PartResponseDto getById(Long id) {
@@ -59,7 +59,8 @@ public class PartService {
         part.setStockQuantity(dto.getStockQuantity());
     }
 
-    private PartResponseDto toDto(Part part) {
+    // static zodat repairservice m ook kan gebruiken
+    static PartResponseDto toDto(Part part) {
         PartResponseDto dto = new PartResponseDto();
         dto.setId(part.getId());
         dto.setName(part.getName());
