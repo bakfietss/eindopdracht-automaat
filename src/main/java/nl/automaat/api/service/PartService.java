@@ -39,7 +39,13 @@ public class PartService {
     }
 
     public void delete(Long id) {
-        partRepository.delete(findOrThrow(id));
+        Part part = findOrThrow(id);
+        // onderdeel dat nog in een reparatie zit mag niet weg
+        if (!part.getRepairs().isEmpty()) {
+            throw new IllegalStateException(
+                    "Onderdeel kan niet verwijderd worden zolang het aan reparaties gekoppeld is.");
+        }
+        partRepository.delete(part);
     }
 
     public Part findOrThrow(Long id) {

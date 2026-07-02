@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "repairs")
@@ -31,4 +33,12 @@ public class Repair {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    @ManyToMany
+    @JoinTable(
+            name = "repair_parts",
+            joinColumns = @JoinColumn(name = "repair_id"),
+            inverseJoinColumns = @JoinColumn(name = "part_id")
+    )
+    private List<Part> parts = new ArrayList<>();
 }
