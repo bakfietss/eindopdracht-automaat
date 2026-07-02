@@ -1,0 +1,10 @@
+package nl.automaat.api.repository;
+
+import nl.automaat.api.model.Inspection;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface InspectionRepository extends JpaRepository<Inspection, Long> {
+    List<Inspection> findByCarId(Long carId);
+}
