@@ -37,4 +37,7 @@ public class Car {
 
     @OneToMany(mappedBy = "car", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Inspection> inspections = new ArrayList<>();
+
+    @OneToMany(mappedBy = "car", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Repair> repairs = new ArrayList<>();
 }
