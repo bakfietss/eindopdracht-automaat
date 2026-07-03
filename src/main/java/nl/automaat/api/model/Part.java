@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "parts")
@@ -27,4 +29,7 @@ public class Part {
 
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity = 0; // begint op 0
+
+    @ManyToMany(mappedBy = "parts")
+    private List<Repair> repairs = new ArrayList<>();
 }
