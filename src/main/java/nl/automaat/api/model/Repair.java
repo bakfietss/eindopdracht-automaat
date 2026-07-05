@@ -41,4 +41,7 @@ public class Repair {
             inverseJoinColumns = @JoinColumn(name = "part_id")
     )
     private List<Part> parts = new ArrayList<>();
+
+    @OneToOne(mappedBy = "repair", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Invoice invoice;
 }
