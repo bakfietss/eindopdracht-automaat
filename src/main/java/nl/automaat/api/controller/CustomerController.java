@@ -1,5 +1,6 @@
 package nl.automaat.api.controller;
 
+import jakarta.validation.Valid;
 import nl.automaat.api.dto.CustomerRequestDto;
 import nl.automaat.api.dto.CustomerResponseDto;
 import nl.automaat.api.service.CustomerService;
@@ -30,14 +31,14 @@ public class CustomerController {
     }
 
     @PostMapping
-    public ResponseEntity<CustomerResponseDto> create(@RequestBody CustomerRequestDto dto) {
+    public ResponseEntity<CustomerResponseDto> create(@Valid @RequestBody CustomerRequestDto dto) {
         CustomerResponseDto created = customerService.create(dto);
         // 201 Created + Location header naar de nieuwe klant
         return ResponseEntity.created(URI.create("/customers/" + created.getId())).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CustomerResponseDto> update(@PathVariable Long id, @RequestBody CustomerRequestDto dto) {
+    public ResponseEntity<CustomerResponseDto> update(@PathVariable Long id, @Valid @RequestBody CustomerRequestDto dto) {
         return ResponseEntity.ok(customerService.update(id, dto));
     }
 
