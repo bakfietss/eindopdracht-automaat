@@ -1,5 +1,6 @@
 package nl.automaat.api.controller;
 
+import jakarta.validation.Valid;
 import nl.automaat.api.dto.CarRequestDto;
 import nl.automaat.api.dto.CarResponseDto;
 import nl.automaat.api.service.CarService;
@@ -30,13 +31,13 @@ public class CarController {
     }
 
     @PostMapping
-    public ResponseEntity<CarResponseDto> create(@RequestBody CarRequestDto dto) {
+    public ResponseEntity<CarResponseDto> create(@Valid @RequestBody CarRequestDto dto) {
         CarResponseDto created = carService.create(dto);
         return ResponseEntity.created(URI.create("/cars/" + created.getId())).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CarResponseDto> update(@PathVariable Long id, @RequestBody CarRequestDto dto) {
+    public ResponseEntity<CarResponseDto> update(@PathVariable Long id, @Valid @RequestBody CarRequestDto dto) {
         return ResponseEntity.ok(carService.update(id, dto));
     }
 

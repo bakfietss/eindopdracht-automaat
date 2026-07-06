@@ -1,5 +1,6 @@
 package nl.automaat.api.controller;
 
+import jakarta.validation.Valid;
 import nl.automaat.api.dto.RepairRequestDto;
 import nl.automaat.api.dto.RepairResponseDto;
 import nl.automaat.api.service.RepairService;
@@ -30,13 +31,13 @@ public class RepairController {
     }
 
     @PostMapping
-    public ResponseEntity<RepairResponseDto> create(@RequestBody RepairRequestDto dto) {
+    public ResponseEntity<RepairResponseDto> create(@Valid @RequestBody RepairRequestDto dto) {
         RepairResponseDto created = repairService.create(dto);
         return ResponseEntity.created(URI.create("/repairs/" + created.getId())).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<RepairResponseDto> update(@PathVariable Long id, @RequestBody RepairRequestDto dto) {
+    public ResponseEntity<RepairResponseDto> update(@PathVariable Long id, @Valid @RequestBody RepairRequestDto dto) {
         return ResponseEntity.ok(repairService.update(id, dto));
     }
 

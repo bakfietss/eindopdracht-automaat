@@ -1,5 +1,6 @@
 package nl.automaat.api.controller;
 
+import jakarta.validation.Valid;
 import nl.automaat.api.dto.InspectionRequestDto;
 import nl.automaat.api.dto.InspectionResponseDto;
 import nl.automaat.api.service.InspectionService;
@@ -30,13 +31,13 @@ public class InspectionController {
     }
 
     @PostMapping
-    public ResponseEntity<InspectionResponseDto> create(@RequestBody InspectionRequestDto dto) {
+    public ResponseEntity<InspectionResponseDto> create(@Valid @RequestBody InspectionRequestDto dto) {
         InspectionResponseDto created = inspectionService.create(dto);
         return ResponseEntity.created(URI.create("/inspections/" + created.getId())).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<InspectionResponseDto> update(@PathVariable Long id, @RequestBody InspectionRequestDto dto) {
+    public ResponseEntity<InspectionResponseDto> update(@PathVariable Long id, @Valid @RequestBody InspectionRequestDto dto) {
         return ResponseEntity.ok(inspectionService.update(id, dto));
     }
 
