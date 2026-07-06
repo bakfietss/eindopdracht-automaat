@@ -1,5 +1,6 @@
 package nl.automaat.api.controller;
 
+import jakarta.validation.Valid;
 import nl.automaat.api.dto.InvoiceRequestDto;
 import nl.automaat.api.dto.InvoiceResponseDto;
 import nl.automaat.api.service.InvoiceService;
@@ -30,13 +31,13 @@ public class InvoiceController {
     }
 
     @PostMapping
-    public ResponseEntity<InvoiceResponseDto> create(@RequestBody InvoiceRequestDto dto) {
+    public ResponseEntity<InvoiceResponseDto> create(@Valid @RequestBody InvoiceRequestDto dto) {
         InvoiceResponseDto created = invoiceService.create(dto);
         return ResponseEntity.created(URI.create("/invoices/" + created.getId())).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<InvoiceResponseDto> update(@PathVariable Long id, @RequestBody InvoiceRequestDto dto) {
+    public ResponseEntity<InvoiceResponseDto> update(@PathVariable Long id, @Valid @RequestBody InvoiceRequestDto dto) {
         return ResponseEntity.ok(invoiceService.update(id, dto));
     }
 
