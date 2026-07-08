@@ -3,6 +3,7 @@ package nl.automaat.api.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
@@ -30,7 +31,16 @@ public class SecurityConfig {
         return http
                 .httpBasic(basic -> basic.disable())
                 .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> auth
+                        // lezen mag iedereen die is ingelogd
+                        .requestMatchers(HttpMethod.GET, "/**").authenticated()
+                        // kassa beheert klanten, auto's en bonnen
+                        .requestMatchers("/customers/**", "/cars/**", "/invoices/**").hasRole("CASHIER")
+                        // monteur beheert keuringen en reparaties
+                        .requestMatchers("/inspections/**", "/repairs/**").hasRole("MECHANIC")
+                        // backoffice beheert de onderdelenvoorraad
+                        .requestMatchers("/parts/**").hasRole("BACKOFFICE")
+                        .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
                                 .decoder(jwtDecoder())
