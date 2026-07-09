@@ -3,21 +3,29 @@ package nl.automaat.api.controller;
 import jakarta.validation.Valid;
 import nl.automaat.api.dto.CarRequestDto;
 import nl.automaat.api.dto.CarResponseDto;
+import nl.automaat.api.service.CarDocumentService;
 import nl.automaat.api.service.CarService;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/cars")
 public class CarController {
 
     private final CarService carService;
+    private final CarDocumentService carDocumentService;
 
-    public CarController(CarService carService) {
+    public CarController(CarService carService, CarDocumentService carDocumentService) {
         this.carService = carService;
+        this.carDocumentService = carDocumentService;
     }
 
     @GetMapping
@@ -45,5 +53,22 @@ public class CarController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         carService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/document")
+    public ResponseEntity<Map<String, String>> uploadDocument(@PathVariable Long id,
+                                                              @RequestParam("file") MultipartFile file) {
+        String path = carDocumentService.uploadDocument(id, file);
+        return ResponseEntity.ok(Map.of("message", "Autopapieren geüpload.", "path", path));
+    }
+
+    @GetMapping("/{id}/document")
+    public ResponseEntity<Resource> downloadDocument(@PathVariable Long id) {
+        Resource resource = carDocumentService.downloadDocument(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"autopapieren-" + id + ".pdf\"")
+                .body(resource);
     }
 }
