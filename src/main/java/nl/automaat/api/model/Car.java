@@ -31,6 +31,10 @@ public class Car {
     @Column(name = "build_year", nullable = false)
     private Integer buildYear;
 
+    // pad naar geuploade autopapieren (pdf), leeg tot er iets geupload is
+    @Column(name = "registration_document_path")
+    private String registrationDocumentPath;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
