@@ -3,6 +3,7 @@ package nl.automaat.api.controller;
 import jakarta.validation.Valid;
 import nl.automaat.api.dto.CarRequestDto;
 import nl.automaat.api.dto.CarResponseDto;
+import nl.automaat.api.dto.CarUpdateDto;
 import nl.automaat.api.service.CarDocumentService;
 import nl.automaat.api.service.CarService;
 import org.springframework.core.io.Resource;
@@ -47,6 +48,11 @@ public class CarController {
     @PutMapping("/{id}")
     public ResponseEntity<CarResponseDto> update(@PathVariable Long id, @Valid @RequestBody CarRequestDto dto) {
         return ResponseEntity.ok(carService.update(id, dto));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<CarResponseDto> patch(@PathVariable Long id, @Valid @RequestBody CarUpdateDto dto) {
+        return ResponseEntity.ok(carService.patch(id, dto));
     }
 
     @DeleteMapping("/{id}")

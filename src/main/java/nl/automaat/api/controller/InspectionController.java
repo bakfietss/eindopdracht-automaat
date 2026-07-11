@@ -3,6 +3,7 @@ package nl.automaat.api.controller;
 import jakarta.validation.Valid;
 import nl.automaat.api.dto.InspectionRequestDto;
 import nl.automaat.api.dto.InspectionResponseDto;
+import nl.automaat.api.dto.InspectionUpdateDto;
 import nl.automaat.api.service.InspectionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,6 +40,11 @@ public class InspectionController {
     @PutMapping("/{id}")
     public ResponseEntity<InspectionResponseDto> update(@PathVariable Long id, @Valid @RequestBody InspectionRequestDto dto) {
         return ResponseEntity.ok(inspectionService.update(id, dto));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<InspectionResponseDto> patch(@PathVariable Long id, @Valid @RequestBody InspectionUpdateDto dto) {
+        return ResponseEntity.ok(inspectionService.patch(id, dto));
     }
 
     @DeleteMapping("/{id}")
