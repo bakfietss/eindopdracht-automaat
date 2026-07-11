@@ -3,8 +3,10 @@ package nl.automaat.api.service;
 import jakarta.persistence.EntityNotFoundException;
 import nl.automaat.api.dto.CustomerRequestDto;
 import nl.automaat.api.dto.CustomerResponseDto;
+import nl.automaat.api.dto.CustomerUpdateDto;
 import nl.automaat.api.model.Customer;
 import nl.automaat.api.repository.CustomerRepository;
+import nl.automaat.api.util.PatchUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -44,6 +46,19 @@ public class CustomerService {
             throw new IllegalArgumentException("Er bestaat al een klant met dit e-mailadres.");
         }
         apply(customer, dto);
+        return toDto(customerRepository.save(customer));
+    }
+
+    public CustomerResponseDto patch(Long id, CustomerUpdateDto dto) {
+        Customer customer = findOrThrow(id);
+        if (dto.getEmail() != null
+                && !customer.getEmail().equalsIgnoreCase(dto.getEmail())
+                && customerRepository.existsByEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("Er bestaat al een klant met dit e-mailadres.");
+        }
+        PatchUtil.applyIfPresent(dto.getName(), customer::setName);
+        PatchUtil.applyIfPresent(dto.getPhoneNumber(), customer::setPhoneNumber);
+        PatchUtil.applyIfPresent(dto.getEmail(), customer::setEmail);
         return toDto(customerRepository.save(customer));
     }
 

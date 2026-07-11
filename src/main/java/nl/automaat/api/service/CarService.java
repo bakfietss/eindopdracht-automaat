@@ -3,10 +3,12 @@ package nl.automaat.api.service;
 import jakarta.persistence.EntityNotFoundException;
 import nl.automaat.api.dto.CarRequestDto;
 import nl.automaat.api.dto.CarResponseDto;
+import nl.automaat.api.dto.CarUpdateDto;
 import nl.automaat.api.model.Car;
 import nl.automaat.api.model.Customer;
 import nl.automaat.api.repository.CarRepository;
 import nl.automaat.api.repository.CustomerRepository;
+import nl.automaat.api.util.PatchUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -46,6 +48,26 @@ public class CarService {
             throw new IllegalArgumentException("Er bestaat al een auto met dit kenteken.");
         }
         apply(car, dto);
+        return toDto(carRepository.save(car));
+    }
+
+    public CarResponseDto patch(Long id, CarUpdateDto dto) {
+        Car car = findOrThrow(id);
+        if (dto.getLicensePlate() != null
+                && !car.getLicensePlate().equalsIgnoreCase(dto.getLicensePlate())
+                && carRepository.existsByLicensePlate(dto.getLicensePlate())) {
+            throw new IllegalArgumentException("Er bestaat al een auto met dit kenteken.");
+        }
+        PatchUtil.applyIfPresent(dto.getLicensePlate(), car::setLicensePlate);
+        PatchUtil.applyIfPresent(dto.getBrand(), car::setBrand);
+        PatchUtil.applyIfPresent(dto.getModel(), car::setModel);
+        PatchUtil.applyIfPresent(dto.getBuildYear(), car::setBuildYear);
+        if (dto.getCustomerId() != null) {
+            Customer customer = customerRepository.findById(dto.getCustomerId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Klant met id " + dto.getCustomerId() + " niet gevonden."));
+            car.setCustomer(customer);
+        }
         return toDto(carRepository.save(car));
     }
 
