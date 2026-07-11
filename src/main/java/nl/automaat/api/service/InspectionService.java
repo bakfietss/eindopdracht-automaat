@@ -3,10 +3,12 @@ package nl.automaat.api.service;
 import jakarta.persistence.EntityNotFoundException;
 import nl.automaat.api.dto.InspectionRequestDto;
 import nl.automaat.api.dto.InspectionResponseDto;
+import nl.automaat.api.dto.InspectionUpdateDto;
 import nl.automaat.api.model.Car;
 import nl.automaat.api.model.Inspection;
 import nl.automaat.api.repository.CarRepository;
 import nl.automaat.api.repository.InspectionRepository;
+import nl.automaat.api.util.PatchUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,6 +41,20 @@ public class InspectionService {
     public InspectionResponseDto update(Long id, InspectionRequestDto dto) {
         Inspection inspection = findOrThrow(id);
         apply(inspection, dto);
+        return toDto(inspectionRepository.save(inspection));
+    }
+
+    public InspectionResponseDto patch(Long id, InspectionUpdateDto dto) {
+        Inspection inspection = findOrThrow(id);
+        if (dto.getCarId() != null) {
+            Car car = carRepository.findById(dto.getCarId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Auto met id " + dto.getCarId() + " niet gevonden."));
+            inspection.setCar(car);
+        }
+        PatchUtil.applyIfPresent(dto.getInspectionDate(), inspection::setInspectionDate);
+        PatchUtil.applyIfPresent(dto.getStatus(), inspection::setStatus);
+        PatchUtil.applyIfPresent(dto.getIssues(), inspection::setIssues);
         return toDto(inspectionRepository.save(inspection));
     }
 

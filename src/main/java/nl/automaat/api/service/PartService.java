@@ -3,8 +3,10 @@ package nl.automaat.api.service;
 import jakarta.persistence.EntityNotFoundException;
 import nl.automaat.api.dto.PartRequestDto;
 import nl.automaat.api.dto.PartResponseDto;
+import nl.automaat.api.dto.PartUpdateDto;
 import nl.automaat.api.model.Part;
 import nl.automaat.api.repository.PartRepository;
+import nl.automaat.api.util.PatchUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,6 +37,14 @@ public class PartService {
     public PartResponseDto update(Long id, PartRequestDto dto) {
         Part part = findOrThrow(id);
         apply(part, dto);
+        return toDto(partRepository.save(part));
+    }
+
+    public PartResponseDto patch(Long id, PartUpdateDto dto) {
+        Part part = findOrThrow(id);
+        PatchUtil.applyIfPresent(dto.getName(), part::setName);
+        PatchUtil.applyIfPresent(dto.getPrice(), part::setPrice);
+        PatchUtil.applyIfPresent(dto.getStockQuantity(), part::setStockQuantity);
         return toDto(partRepository.save(part));
     }
 

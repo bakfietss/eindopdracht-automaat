@@ -3,6 +3,7 @@ package nl.automaat.api.service;
 import jakarta.persistence.EntityNotFoundException;
 import nl.automaat.api.dto.InvoiceRequestDto;
 import nl.automaat.api.dto.InvoiceResponseDto;
+import nl.automaat.api.dto.InvoiceUpdateDto;
 import nl.automaat.api.model.Invoice;
 import nl.automaat.api.model.PaymentStatus;
 import nl.automaat.api.model.Part;
@@ -62,6 +63,14 @@ public class InvoiceService {
 
     // alleen betaalstatus is aanpasbaar, bedragen liggen vast
     public InvoiceResponseDto update(Long id, InvoiceRequestDto dto) {
+        Invoice invoice = findOrThrow(id);
+        if (dto.getPaymentStatus() != null) {
+            invoice.setPaymentStatus(dto.getPaymentStatus());
+        }
+        return toDto(invoiceRepository.save(invoice));
+    }
+
+    public InvoiceResponseDto patch(Long id, InvoiceUpdateDto dto) {
         Invoice invoice = findOrThrow(id);
         if (dto.getPaymentStatus() != null) {
             invoice.setPaymentStatus(dto.getPaymentStatus());

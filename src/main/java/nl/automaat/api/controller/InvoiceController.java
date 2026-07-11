@@ -3,6 +3,7 @@ package nl.automaat.api.controller;
 import jakarta.validation.Valid;
 import nl.automaat.api.dto.InvoiceRequestDto;
 import nl.automaat.api.dto.InvoiceResponseDto;
+import nl.automaat.api.dto.InvoiceUpdateDto;
 import nl.automaat.api.service.InvoicePdfService;
 import nl.automaat.api.service.InvoiceService;
 import org.springframework.http.HttpHeaders;
@@ -44,6 +45,11 @@ public class InvoiceController {
     @PutMapping("/{id}")
     public ResponseEntity<InvoiceResponseDto> update(@PathVariable Long id, @Valid @RequestBody InvoiceRequestDto dto) {
         return ResponseEntity.ok(invoiceService.update(id, dto));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<InvoiceResponseDto> patch(@PathVariable Long id, @Valid @RequestBody InvoiceUpdateDto dto) {
+        return ResponseEntity.ok(invoiceService.patch(id, dto));
     }
 
     @DeleteMapping("/{id}")

@@ -3,12 +3,14 @@ package nl.automaat.api.service;
 import jakarta.persistence.EntityNotFoundException;
 import nl.automaat.api.dto.RepairRequestDto;
 import nl.automaat.api.dto.RepairResponseDto;
+import nl.automaat.api.dto.RepairUpdateDto;
 import nl.automaat.api.model.Car;
 import nl.automaat.api.model.Part;
 import nl.automaat.api.model.Repair;
 import nl.automaat.api.repository.CarRepository;
 import nl.automaat.api.repository.PartRepository;
 import nl.automaat.api.repository.RepairRepository;
+import nl.automaat.api.util.PatchUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -45,6 +47,28 @@ public class RepairService {
     public RepairResponseDto update(Long id, RepairRequestDto dto) {
         Repair repair = findOrThrow(id);
         apply(repair, dto);
+        return toDto(repairRepository.save(repair));
+    }
+
+    public RepairResponseDto patch(Long id, RepairUpdateDto dto) {
+        Repair repair = findOrThrow(id);
+        if (dto.getCarId() != null) {
+            Car car = carRepository.findById(dto.getCarId())
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Auto met id " + dto.getCarId() + " niet gevonden."));
+            repair.setCar(car);
+        }
+        PatchUtil.applyIfPresent(dto.getRepairDate(), repair::setRepairDate);
+        PatchUtil.applyIfPresent(dto.getStatus(), repair::setStatus);
+        PatchUtil.applyIfPresent(dto.getNotes(), repair::setNotes);
+        if (dto.getPartIds() != null) {
+            List<Part> parts = dto.getPartIds().stream()
+                    .map(partId -> partRepository.findById(partId)
+                            .orElseThrow(() -> new EntityNotFoundException(
+                                    "Onderdeel met id " + partId + " niet gevonden.")))
+                    .toList();
+            repair.setParts(parts);
+        }
         return toDto(repairRepository.save(repair));
     }
 
