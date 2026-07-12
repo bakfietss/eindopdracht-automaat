@@ -1,0 +1,308 @@
+{
+  "info": {
+    "name": "AutoMaat API",
+    "description": "Volledige endpoint-collectie voor de AutoMaat web-API. Authenticatie via Keycloak (OAuth2.0 Authorization Code) is op collectie-niveau ingesteld; vraag eerst een token op via 'Get New Access Token' en vul je client secret in de collectie-variabele. Wachtwoord testgebruikers: geheim.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "oauth2",
+    "oauth2": [
+      { "key": "grant_type", "value": "authorization_code", "type": "string" },
+      { "key": "authUrl", "value": "{{keycloakUrl}}/realms/automaat/protocol/openid-connect/auth", "type": "string" },
+      { "key": "accessTokenUrl", "value": "{{keycloakUrl}}/realms/automaat/protocol/openid-connect/token", "type": "string" },
+      { "key": "clientId", "value": "automaat-api", "type": "string" },
+      { "key": "clientSecret", "value": "{{clientSecret}}", "type": "string" },
+      { "key": "scope", "value": "openid", "type": "string" },
+      { "key": "redirect_uri", "value": "https://oauth.pstmn.io/v1/callback", "type": "string" },
+      { "key": "tokenName", "value": "automaat-token", "type": "string" },
+      { "key": "addTokenTo", "value": "header", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "keycloakUrl", "value": "http://localhost:9090" },
+    { "key": "clientSecret", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "Get all customers",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] } }
+        },
+        {
+          "name": "Get customer by id",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/customers/1", "host": ["{{baseUrl}}"], "path": ["customers", "1"] } }
+        },
+        {
+          "name": "Create customer",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Henk de Vries\",\n  \"phoneNumber\": \"0612345678\",\n  \"email\": \"henk@example.com\"\n}" },
+            "url": { "raw": "{{baseUrl}}/customers", "host": ["{{baseUrl}}"], "path": ["customers"] }
+          }
+        },
+        {
+          "name": "Update customer (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Henk de Vries\",\n  \"phoneNumber\": \"0611111111\",\n  \"email\": \"henk@example.com\"\n}" },
+            "url": { "raw": "{{baseUrl}}/customers/1", "host": ["{{baseUrl}}"], "path": ["customers", "1"] }
+          }
+        },
+        {
+          "name": "Patch customer",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"phoneNumber\": \"0622222222\"\n}" },
+            "url": { "raw": "{{baseUrl}}/customers/1", "host": ["{{baseUrl}}"], "path": ["customers", "1"] }
+          }
+        },
+        {
+          "name": "Delete customer",
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/customers/1", "host": ["{{baseUrl}}"], "path": ["customers", "1"] } }
+        }
+      ]
+    },
+    {
+      "name": "Cars",
+      "item": [
+        {
+          "name": "Get all cars",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/cars", "host": ["{{baseUrl}}"], "path": ["cars"] } }
+        },
+        {
+          "name": "Get car by id",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/cars/1", "host": ["{{baseUrl}}"], "path": ["cars", "1"] } }
+        },
+        {
+          "name": "Create car",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"licensePlate\": \"AB-123-C\",\n  \"brand\": \"Volkswagen\",\n  \"model\": \"Golf\",\n  \"buildYear\": 2018,\n  \"customerId\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/cars", "host": ["{{baseUrl}}"], "path": ["cars"] }
+          }
+        },
+        {
+          "name": "Update car (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"licensePlate\": \"AB-123-C\",\n  \"brand\": \"Volkswagen\",\n  \"model\": \"Golf GTI\",\n  \"buildYear\": 2019,\n  \"customerId\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/cars/1", "host": ["{{baseUrl}}"], "path": ["cars", "1"] }
+          }
+        },
+        {
+          "name": "Patch car",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"model\": \"Golf GTE\"\n}" },
+            "url": { "raw": "{{baseUrl}}/cars/1", "host": ["{{baseUrl}}"], "path": ["cars", "1"] }
+          }
+        },
+        {
+          "name": "Upload autopapieren (PDF)",
+          "request": {
+            "method": "POST",
+            "body": { "mode": "formdata", "formdata": [ { "key": "file", "type": "file", "src": [] } ] },
+            "url": { "raw": "{{baseUrl}}/cars/1/document", "host": ["{{baseUrl}}"], "path": ["cars", "1", "document"] }
+          }
+        },
+        {
+          "name": "Download autopapieren (PDF)",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/cars/1/document", "host": ["{{baseUrl}}"], "path": ["cars", "1", "document"] } }
+        },
+        {
+          "name": "Delete car",
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/cars/1", "host": ["{{baseUrl}}"], "path": ["cars", "1"] } }
+        }
+      ]
+    },
+    {
+      "name": "Inspections",
+      "item": [
+        {
+          "name": "Get all inspections",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/inspections", "host": ["{{baseUrl}}"], "path": ["inspections"] } }
+        },
+        {
+          "name": "Get inspection by id",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/inspections/1", "host": ["{{baseUrl}}"], "path": ["inspections", "1"] } }
+        },
+        {
+          "name": "Create inspection",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"carId\": 1,\n  \"inspectionDate\": \"2026-07-01\",\n  \"status\": \"SCHEDULED\",\n  \"issues\": \"Remmen controleren\"\n}" },
+            "url": { "raw": "{{baseUrl}}/inspections", "host": ["{{baseUrl}}"], "path": ["inspections"] }
+          }
+        },
+        {
+          "name": "Update inspection (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"carId\": 1,\n  \"inspectionDate\": \"2026-07-01\",\n  \"status\": \"IN_PROGRESS\",\n  \"issues\": \"Remblokken versleten\"\n}" },
+            "url": { "raw": "{{baseUrl}}/inspections/1", "host": ["{{baseUrl}}"], "path": ["inspections", "1"] }
+          }
+        },
+        {
+          "name": "Patch inspection",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"APPROVED\"\n}" },
+            "url": { "raw": "{{baseUrl}}/inspections/1", "host": ["{{baseUrl}}"], "path": ["inspections", "1"] }
+          }
+        },
+        {
+          "name": "Delete inspection",
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/inspections/1", "host": ["{{baseUrl}}"], "path": ["inspections", "1"] } }
+        }
+      ]
+    },
+    {
+      "name": "Repairs",
+      "item": [
+        {
+          "name": "Get all repairs",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/repairs", "host": ["{{baseUrl}}"], "path": ["repairs"] } }
+        },
+        {
+          "name": "Get repair by id",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/repairs/1", "host": ["{{baseUrl}}"], "path": ["repairs", "1"] } }
+        },
+        {
+          "name": "Create repair",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"carId\": 1,\n  \"repairDate\": \"2026-07-02\",\n  \"status\": \"OPEN\",\n  \"notes\": \"Remblokken vervangen\",\n  \"partIds\": [1]\n}" },
+            "url": { "raw": "{{baseUrl}}/repairs", "host": ["{{baseUrl}}"], "path": ["repairs"] }
+          }
+        },
+        {
+          "name": "Update repair (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"carId\": 1,\n  \"repairDate\": \"2026-07-02\",\n  \"status\": \"COMPLETED\",\n  \"notes\": \"Remblokken vervangen en getest\",\n  \"partIds\": [1]\n}" },
+            "url": { "raw": "{{baseUrl}}/repairs/1", "host": ["{{baseUrl}}"], "path": ["repairs", "1"] }
+          }
+        },
+        {
+          "name": "Patch repair",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"COMPLETED\"\n}" },
+            "url": { "raw": "{{baseUrl}}/repairs/1", "host": ["{{baseUrl}}"], "path": ["repairs", "1"] }
+          }
+        },
+        {
+          "name": "Delete repair",
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/repairs/1", "host": ["{{baseUrl}}"], "path": ["repairs", "1"] } }
+        }
+      ]
+    },
+    {
+      "name": "Parts",
+      "item": [
+        {
+          "name": "Get all parts",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/parts", "host": ["{{baseUrl}}"], "path": ["parts"] } }
+        },
+        {
+          "name": "Get part by id",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/parts/1", "host": ["{{baseUrl}}"], "path": ["parts", "1"] } }
+        },
+        {
+          "name": "Create part",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Remblokset voor\",\n  \"price\": 45.50,\n  \"stockQuantity\": 10\n}" },
+            "url": { "raw": "{{baseUrl}}/parts", "host": ["{{baseUrl}}"], "path": ["parts"] }
+          }
+        },
+        {
+          "name": "Update part (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Remblokset voor\",\n  \"price\": 49.95,\n  \"stockQuantity\": 8\n}" },
+            "url": { "raw": "{{baseUrl}}/parts/1", "host": ["{{baseUrl}}"], "path": ["parts", "1"] }
+          }
+        },
+        {
+          "name": "Patch part",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"stockQuantity\": 5\n}" },
+            "url": { "raw": "{{baseUrl}}/parts/1", "host": ["{{baseUrl}}"], "path": ["parts", "1"] }
+          }
+        },
+        {
+          "name": "Delete part",
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/parts/1", "host": ["{{baseUrl}}"], "path": ["parts", "1"] } }
+        }
+      ]
+    },
+    {
+      "name": "Invoices",
+      "item": [
+        {
+          "name": "Get all invoices",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/invoices", "host": ["{{baseUrl}}"], "path": ["invoices"] } }
+        },
+        {
+          "name": "Get invoice by id",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/invoices/1", "host": ["{{baseUrl}}"], "path": ["invoices", "1"] } }
+        },
+        {
+          "name": "Create invoice",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"repairId\": 1,\n  \"paymentStatus\": \"PENDING\"\n}" },
+            "url": { "raw": "{{baseUrl}}/invoices", "host": ["{{baseUrl}}"], "path": ["invoices"] }
+          }
+        },
+        {
+          "name": "Update invoice (PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"paymentStatus\": \"PAID\"\n}" },
+            "url": { "raw": "{{baseUrl}}/invoices/1", "host": ["{{baseUrl}}"], "path": ["invoices", "1"] }
+          }
+        },
+        {
+          "name": "Patch invoice (betaalstatus)",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"paymentStatus\": \"PAID\"\n}" },
+            "url": { "raw": "{{baseUrl}}/invoices/1", "host": ["{{baseUrl}}"], "path": ["invoices", "1"] }
+          }
+        },
+        {
+          "name": "Download bon (PDF)",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/invoices/1/pdf", "host": ["{{baseUrl}}"], "path": ["invoices", "1", "pdf"] } }
+        },
+        {
+          "name": "Delete invoice",
+          "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/invoices/1", "host": ["{{baseUrl}}"], "path": ["invoices", "1"] } }
+        }
+      ]
+    }
+  ]
+}
