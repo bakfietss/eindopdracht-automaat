@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoMaat — API-documentatie</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;max-width:800px;
+       margin:0 auto;padding:44px 26px 90px;line-height:1.65}
+  h1{font-size:23px;margin:0 0 8px}
+  .lead{color:#333;font-size:14.5px;margin:0 0 4px}
+  .sub{color:#777;font-size:13px;margin-bottom:30px}
+  h2{font-size:17px;margin:44px 0 14px;border-bottom:1px solid #e6e6e6;padding-bottom:7px}
+  p{margin:14px 0}
+  code{background:#f0f0f0;padding:1px 5px;border-radius:3px;font-family:monospace;font-size:13px}
+  pre{background:#1e1e2e;color:#e6e6e6;border-radius:8px;padding:15px 17px;
+      overflow-x:auto;font-family:monospace;font-size:12.5px;line-height:1.65;
+      margin:8px 0 6px;white-space:pre}
+  summary{cursor:pointer}
+  table{border-collapse:collapse;font-size:13px;margin:16px 0}
+  th,td{border:1px solid #e0e0e0;padding:9px 15px;text-align:left}
+  th{background:#f5f5f5}
+
+  .rules{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}
+  .rules span{display:inline-flex;align-items:center;font-size:13px;background:#f7f7f8;
+       border:1px solid #e2e2e2;border-radius:20px;padding:6px 15px}
+  .rules .code{font-family:monospace;font-weight:700;margin-right:8px;color:#333}
+
+  details.res{border:1px solid #ddd;border-radius:8px;margin:16px 0}
+  details.res>summary{padding:15px 18px;font-weight:700;background:#f2f2f2;border-radius:8px}
+  .rolebadge{float:right;font-size:11px;font-weight:700;color:#666}
+  .res-body{padding:8px 16px 16px}
+
+  details.ep{border-top:1px solid #eee}
+  details.ep>summary{padding:13px 4px;font-size:14px}
+  .m{display:inline-block;min-width:58px;text-align:center;color:#fff;font-weight:700;
+     font-size:11px;padding:3px 7px;border-radius:4px;margin-right:11px}
+  .m.get{background:#2d8a4e}.m.post{background:#2563eb}.m.put{background:#c47f17}
+  .m.patch{background:#0d9488}.m.delete{background:#c0392b}
+  .path{font-family:monospace;font-weight:600}
+  .epdesc{color:#888;font-size:12px;margin-left:11px}
+  .epbody{padding:4px 6px 16px}
+  .lbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.3px;margin:14px 0 0}
+  .note{font-size:12.5px;color:#555;margin:10px 0 0}
+  @media print{ details.ep,details.res{page-break-inside:avoid} }
+</style>
+</head>
+<body>
+
+<h1>AutoMaat — API-documentatie</h1>
+<p class="lead">REST-API voor het beheer van een autogarage: klanten, auto's, keuringen,
+reparaties, onderdelen en bonnen met btw.</p>
+<div class="sub">Base URL: <code>http://localhost:8080</code></div>
+
+<h2>Authenticatie</h2>
+<p>De authenticatie loopt via <b>twee servers</b>: <b>Keycloak</b> op poort
+<code>9090</code> geeft de tokens uit, de <b>AutoMaat-API</b> op poort <code>8080</code>
+valideert ze alleen. Je doet dus eerst een aanvraag bij Keycloak, en gebruikt dat token
+daarna bij de API.</p>
+
+<div class="lbl">Stap 1 — token ophalen bij Keycloak (poort 9090)</div>
+<pre>POST http://localhost:9090/realms/automaat/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password
+client_id=automaat-api
+client_secret=&lt;jouw-client-secret&gt;
+username=kassa
+password=geheim</pre>
+<p>Keycloak antwoordt met het token. Testgebruikers (wachtwoord <code>geheim</code>):
+<code>kassa</code>, <code>monteur</code>, <code>backoffice</code>.</p>
+<pre>{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSl...",
+  "token_type": "Bearer",
+  "expires_in": 300
+}</pre>
+
+<div class="lbl">Stap 2 — API aanroepen met het token (poort 8080)</div>
+<p>Stuur het <code>access_token</code> mee in de header bij elke aanvraag naar de API:</p>
+<pre>Authorization: Bearer &lt;access_token&gt;</pre>
+<div class="rules">
+  <span><span class="code">200</span>ingelogd + juiste rol</span>
+  <span><span class="code">401</span>geen of ongeldig token</span>
+  <span><span class="code">403</span>rol mag dit niet</span>
+</div>
+<p>Lezen (GET) mag elke ingelogde rol. Schrijven is per resource beperkt:</p>
+<table>
+  <tr><th>Resource</th><th>Schrijven</th></tr>
+  <tr><td><code>/customers</code>, <code>/cars</code>, <code>/invoices</code></td><td><span class="role cashier">CASHIER</span></td></tr>
+  <tr><td><code>/inspections</code>, <code>/repairs</code></td><td><span class="role mechanic">MECHANIC</span></td></tr>
+  <tr><td><code>/parts</code></td><td><span class="role backoffice">BACKOFFICE</span></td></tr>
+</table>
+
+<h2>Endpoints</h2>
+<p>Elke resource heeft de standaard CRUD-endpoints. Klap een resource open voor de methoden,
+en een methode voor een voorbeeld in JSON.</p>
+
+<!-- CUSTOMERS -->
+<details class="res"><summary>/customers <span class="rolebadge">CASHIER</span></summary>
+<div class="res-body">
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/customers</span><span class="epdesc">Alle klanten</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>[
+  {
+    "id": 1,
+    "name": "Pieter Bakker",
+    "phoneNumber": "0624817392",
+    "email": "p.bakker@gmail.com"
+  }
+]</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/customers/{id}</span><span class="epdesc">Eén klant</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>{
+  "id": 1,
+  "name": "Pieter Bakker",
+  "phoneNumber": "0624817392",
+  "email": "p.bakker@gmail.com"
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m post">POST</span><span class="path">/customers</span><span class="epdesc">Klant aanmaken</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "name": "Pieter Bakker",
+  "phoneNumber": "0624817392",
+  "email": "p.bakker@gmail.com"
+}</pre>
+      <div class="note">E-mail moet uniek zijn (dubbel → <code>409</code>); ontbrekend veld → <code>400</code>.</div></div>
+  </details>
+
+  <details class="ep"><summary><span class="m put">PUT</span><span class="path">/customers/{id}</span><span class="epdesc">Vervangen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "name": "Pieter Bakker",
+  "phoneNumber": "0611112222",
+  "email": "p.bakker@gmail.com"
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m patch">PATCH</span><span class="path">/customers/{id}</span><span class="epdesc">Deels wijzigen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "phoneNumber": "0611112222"
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m delete">DELETE</span><span class="path">/customers/{id}</span><span class="epdesc">Verwijderen</span></summary>
+    <div class="epbody"><pre>204 No Content</pre></div>
+  </details>
+
+</div></details>
+
+<!-- CARS -->
+<details class="res"><summary>/cars <span class="rolebadge">CASHIER</span></summary>
+<div class="res-body">
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/cars</span><span class="epdesc">Alle auto's</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>[
+  {
+    "id": 1,
+    "licensePlate": "84-RFL-8",
+    "brand": "Volkswagen",
+    "model": "Golf",
+    "buildYear": 2017,
+    "customerId": 1,
+    "registrationDocumentPath": null
+  }
+]</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/cars/{id}</span><span class="epdesc">Eén auto</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>{
+  "id": 1,
+  "licensePlate": "84-RFL-8",
+  "brand": "Volkswagen",
+  "model": "Golf",
+  "buildYear": 2017,
+  "customerId": 1,
+  "registrationDocumentPath": null
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m post">POST</span><span class="path">/cars</span><span class="epdesc">Auto aanmaken</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "licensePlate": "84-RFL-8",
+  "brand": "Volkswagen",
+  "model": "Golf",
+  "buildYear": 2017,
+  "customerId": 1
+}</pre>
+      <div class="note">Kenteken moet uniek zijn (dubbel → <code>409</code>).</div></div>
+  </details>
+
+  <details class="ep"><summary><span class="m put">PUT</span><span class="path">/cars/{id}</span><span class="epdesc">Vervangen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "licensePlate": "84-RFL-8",
+  "brand": "Volkswagen",
+  "model": "Polo",
+  "buildYear": 2019,
+  "customerId": 1
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m patch">PATCH</span><span class="path">/cars/{id}</span><span class="epdesc">Deels wijzigen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "model": "Polo"
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m delete">DELETE</span><span class="path">/cars/{id}</span><span class="epdesc">Verwijderen</span></summary>
+    <div class="epbody"><pre>204 No Content</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m post">POST</span><span class="path">/cars/{id}/document</span><span class="epdesc">Autopapieren uploaden</span></summary>
+    <div class="epbody"><div class="lbl">Request — multipart/form-data</div>
+<pre>file = &lt;bestand.pdf&gt;</pre>
+      <div class="note">Alleen <code>application/pdf</code> wordt geaccepteerd (anders <code>400</code>).</div>
+      <div class="lbl">Response</div>
+<pre>{
+  "message": "Autopapieren geüpload.",
+  "path": "/uploads/registration/&lt;uuid&gt;.pdf"
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/cars/{id}/document</span><span class="epdesc">Autopapieren downloaden</span></summary>
+    <div class="epbody"><pre>200 OK — application/pdf (bestand)</pre></div>
+  </details>
+
+</div></details>
+
+<!-- INSPECTIONS -->
+<details class="res"><summary>/inspections — keuringen <span class="rolebadge">MECHANIC</span></summary>
+<div class="res-body">
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/inspections</span><span class="epdesc">Alle keuringen</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>[
+  {
+    "id": 1,
+    "carId": 1,
+    "inspectionDate": "2026-03-10",
+    "status": "APPROVED",
+    "issues": "APK goedgekeurd, geen gebreken"
+  }
+]</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/inspections/{id}</span><span class="epdesc">Eén keuring</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>{
+  "id": 1,
+  "carId": 1,
+  "inspectionDate": "2026-03-10",
+  "status": "APPROVED",
+  "issues": null
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m post">POST</span><span class="path">/inspections</span><span class="epdesc">Keuring aanmaken</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "carId": 1,
+  "inspectionDate": "2026-03-10",
+  "status": "SCHEDULED",
+  "issues": "Remmen controleren"
+}</pre>
+      <div class="note">status: <code>SCHEDULED</code>, <code>IN_PROGRESS</code>, <code>APPROVED</code>, <code>REJECTED</code>.</div></div>
+  </details>
+
+  <details class="ep"><summary><span class="m put">PUT</span><span class="path">/inspections/{id}</span><span class="epdesc">Vervangen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "carId": 1,
+  "inspectionDate": "2026-03-10",
+  "status": "APPROVED",
+  "issues": null
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m patch">PATCH</span><span class="path">/inspections/{id}</span><span class="epdesc">Deels wijzigen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "status": "APPROVED"
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m delete">DELETE</span><span class="path">/inspections/{id}</span><span class="epdesc">Verwijderen</span></summary>
+    <div class="epbody"><pre>204 No Content</pre></div>
+  </details>
+
+</div></details>
+
+<!-- REPAIRS -->
+<details class="res"><summary>/repairs — reparaties <span class="rolebadge">MECHANIC</span></summary>
+<div class="res-body">
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/repairs</span><span class="epdesc">Alle reparaties</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>[
+  {
+    "id": 1,
+    "carId": 1,
+    "repairDate": "2026-03-15",
+    "status": "COMPLETED",
+    "notes": "Remblokken vervangen",
+    "partIds": [1, 2]
+  }
+]</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/repairs/{id}</span><span class="epdesc">Eén reparatie</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>{
+  "id": 1,
+  "carId": 1,
+  "repairDate": "2026-03-15",
+  "status": "COMPLETED",
+  "notes": "Remblokken vervangen",
+  "partIds": [1, 2]
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m post">POST</span><span class="path">/repairs</span><span class="epdesc">Reparatie + onderdelen koppelen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "carId": 1,
+  "repairDate": "2026-03-15",
+  "status": "OPEN",
+  "notes": "Remblokken vervangen",
+  "partIds": [1, 2]
+}</pre>
+      <div class="note">status: <code>OPEN</code>, <code>IN_PROGRESS</code>, <code>COMPLETED</code>, <code>CANCELLED</code>. <code>partIds</code> is optioneel.</div></div>
+  </details>
+
+  <details class="ep"><summary><span class="m put">PUT</span><span class="path">/repairs/{id}</span><span class="epdesc">Vervangen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "carId": 1,
+  "repairDate": "2026-03-15",
+  "status": "COMPLETED",
+  "notes": "Klaar",
+  "partIds": [1, 2]
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m patch">PATCH</span><span class="path">/repairs/{id}</span><span class="epdesc">Deels wijzigen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "status": "COMPLETED"
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m delete">DELETE</span><span class="path">/repairs/{id}</span><span class="epdesc">Verwijderen</span></summary>
+    <div class="epbody"><pre>204 No Content</pre></div>
+  </details>
+
+</div></details>
+
+<!-- PARTS -->
+<details class="res"><summary>/parts — onderdelen <span class="rolebadge">BACKOFFICE</span></summary>
+<div class="res-body">
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/parts</span><span class="epdesc">Alle onderdelen</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>[
+  {
+    "id": 1,
+    "name": "Remblokken voor",
+    "price": 59.95,
+    "stockQuantity": 18
+  }
+]</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/parts/{id}</span><span class="epdesc">Eén onderdeel</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>{
+  "id": 1,
+  "name": "Remblokken voor",
+  "price": 59.95,
+  "stockQuantity": 18
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m post">POST</span><span class="path">/parts</span><span class="epdesc">Onderdeel aanmaken</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "name": "Remblokken voor",
+  "price": 59.95,
+  "stockQuantity": 18
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m put">PUT</span><span class="path">/parts/{id}</span><span class="epdesc">Vervangen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "name": "Remblokken voor",
+  "price": 64.95,
+  "stockQuantity": 12
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m patch">PATCH</span><span class="path">/parts/{id}</span><span class="epdesc">Deels wijzigen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "stockQuantity": 12
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m delete">DELETE</span><span class="path">/parts/{id}</span><span class="epdesc">Verwijderen</span></summary>
+    <div class="epbody"><pre>204 No Content</pre>
+      <div class="note">Nog gekoppeld aan een reparatie → <code>409</code>.</div></div>
+  </details>
+
+</div></details>
+
+<!-- INVOICES -->
+<details class="res"><summary>/invoices — bonnen <span class="rolebadge">CASHIER</span></summary>
+<div class="res-body">
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/invoices</span><span class="epdesc">Alle bonnen</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>[
+  {
+    "id": 1,
+    "repairId": 1,
+    "totalAmount": 139.03,
+    "vatAmount": 24.13,
+    "paymentStatus": "PAID"
+  }
+]</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/invoices/{id}</span><span class="epdesc">Eén bon</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>{
+  "id": 1,
+  "repairId": 1,
+  "totalAmount": 139.03,
+  "vatAmount": 24.13,
+  "paymentStatus": "PAID"
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m post">POST</span><span class="path">/invoices</span><span class="epdesc">Bon genereren</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "repairId": 1,
+  "paymentStatus": "PENDING"
+}</pre>
+      <div class="note">Bedrag en btw worden server-side uit de onderdelen berekend. Bestaat er al een bon voor die reparatie → <code>409</code>.</div></div>
+  </details>
+
+  <details class="ep"><summary><span class="m patch">PATCH</span><span class="path">/invoices/{id}</span><span class="epdesc">Betaalstatus wijzigen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "paymentStatus": "PAID"
+}</pre>
+      <div class="note">Alleen de betaalstatus is aanpasbaar; de bedragen liggen vast.</div></div>
+  </details>
+
+  <details class="ep"><summary><span class="m delete">DELETE</span><span class="path">/invoices/{id}</span><span class="epdesc">Verwijderen</span></summary>
+    <div class="epbody"><pre>204 No Content</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/invoices/{id}/pdf</span><span class="epdesc">Bon als PDF</span></summary>
+    <div class="epbody"><pre>200 OK — application/pdf (bestand)</pre></div>
+  </details>
+
+</div></details>
+
+<h2>Foutresponse</h2>
+<p>Fouten komen als JSON met <code>status</code>, <code>error</code>, <code>message</code> en
+<code>timestamp</code>; bij validatie extra <code>fieldErrors</code>.</p>
+<pre>{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Validatie mislukt.",
+  "timestamp": "2026-05-12T10:15:30.123Z",
+  "fieldErrors": {
+    "email": "E-mailadres is verplicht."
+  }
+}</pre>
+
+</body>
+</html>
