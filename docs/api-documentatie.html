@@ -11,6 +11,7 @@
   .lead{color:#333;font-size:14.5px;margin:0 0 4px}
   .sub{color:#777;font-size:13px;margin-bottom:30px}
   h2{font-size:17px;margin:44px 0 14px;border-bottom:1px solid #e6e6e6;padding-bottom:7px}
+  h3.rolehead{font-size:14px;margin:28px 0 8px;color:#333;text-transform:uppercase;letter-spacing:.5px}
   p{margin:14px 0}
   code{background:#f0f0f0;padding:1px 5px;border-radius:3px;font-family:monospace;font-size:13px}
   pre{background:#1e1e2e;color:#e6e6e6;border-radius:8px;padding:15px 17px;
@@ -59,21 +60,16 @@ valideert ze alleen. Je doet dus eerst een aanvraag bij Keycloak, en gebruikt da
 daarna bij de API.</p>
 
 <div class="lbl">Stap 1 — token ophalen bij Keycloak (poort 9090)</div>
-<pre>POST http://localhost:9090/realms/automaat/protocol/openid-connect/token
-Content-Type: application/x-www-form-urlencoded
-
-grant_type=password
-client_id=automaat-api
-client_secret=&lt;jouw-client-secret&gt;
-username=kassa
-password=geheim</pre>
-<p>Keycloak antwoordt met het token. Testgebruikers (wachtwoord <code>geheim</code>):
-<code>kassa</code>, <code>monteur</code>, <code>backoffice</code>.</p>
-<pre>{
-  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSl...",
-  "token_type": "Bearer",
-  "expires_in": 300
-}</pre>
+<p>De client <code>automaat-api</code> gebruikt de <b>Authorization Code</b>-flow. Vraag in
+Postman (OAuth 2.0) een token op met:</p>
+<pre>Grant type: Authorization Code
+Auth URL:   http://localhost:9090/realms/automaat/protocol/openid-connect/auth
+Token URL:  http://localhost:9090/realms/automaat/protocol/openid-connect/token
+Client ID:  automaat-api
+Scope:      openid</pre>
+<p>Je logt in met een testgebruiker (wachtwoord <code>geheim</code>): <code>kassa</code>,
+<code>monteur</code> of <code>backoffice</code>. Keycloak geeft daarna een JWT terug als
+<code>access_token</code>.</p>
 
 <div class="lbl">Stap 2 — API aanroepen met het token (poort 8080)</div>
 <p>Stuur het <code>access_token</code> mee in de header bij elke aanvraag naar de API:</p>
@@ -94,6 +90,8 @@ password=geheim</pre>
 <h2>Endpoints</h2>
 <p>Elke resource heeft de standaard CRUD-endpoints. Klap een resource open voor de methoden,
 en een methode voor een voorbeeld in JSON.</p>
+
+<h3 class="rolehead">Kassamedewerker (CASHIER)</h3>
 
 <!-- CUSTOMERS -->
 <details class="res"><summary>/customers <span class="rolebadge">CASHIER</span></summary>
@@ -166,8 +164,7 @@ en een methode voor een voorbeeld in JSON.</p>
     "brand": "Volkswagen",
     "model": "Golf",
     "buildYear": 2017,
-    "customerId": 1,
-    "registrationDocumentPath": null
+    "customerId": 1
   }
 ]</pre></div>
   </details>
@@ -180,8 +177,7 @@ en een methode voor een voorbeeld in JSON.</p>
   "brand": "Volkswagen",
   "model": "Golf",
   "buildYear": 2017,
-  "customerId": 1,
-  "registrationDocumentPath": null
+  "customerId": 1
 }</pre></div>
   </details>
 
@@ -235,6 +231,63 @@ en een methode voor een voorbeeld in JSON.</p>
   </details>
 
 </div></details>
+
+<!-- INVOICES -->
+<details class="res"><summary>/invoices — bonnen <span class="rolebadge">CASHIER</span></summary>
+<div class="res-body">
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/invoices</span><span class="epdesc">Alle bonnen</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>[
+  {
+    "id": 1,
+    "repairId": 1,
+    "totalAmount": 139.03,
+    "vatAmount": 24.13,
+    "paymentStatus": "PAID"
+  }
+]</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/invoices/{id}</span><span class="epdesc">Eén bon</span></summary>
+    <div class="epbody"><div class="lbl">Response</div>
+<pre>{
+  "id": 1,
+  "repairId": 1,
+  "totalAmount": 139.03,
+  "vatAmount": 24.13,
+  "paymentStatus": "PAID"
+}</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m post">POST</span><span class="path">/invoices</span><span class="epdesc">Bon genereren</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "repairId": 1,
+  "paymentStatus": "PENDING"
+}</pre>
+      <div class="note">Bedrag en btw worden server-side uit de onderdelen berekend. Bestaat er al een bon voor die reparatie → <code>409</code>.</div></div>
+  </details>
+
+  <details class="ep"><summary><span class="m patch">PATCH</span><span class="path">/invoices/{id}</span><span class="epdesc">Betaalstatus wijzigen</span></summary>
+    <div class="epbody"><div class="lbl">Request</div>
+<pre>{
+  "paymentStatus": "PAID"
+}</pre>
+      <div class="note">Alleen de betaalstatus is aanpasbaar; de bedragen liggen vast.</div></div>
+  </details>
+
+  <details class="ep"><summary><span class="m delete">DELETE</span><span class="path">/invoices/{id}</span><span class="epdesc">Verwijderen</span></summary>
+    <div class="epbody"><pre>204 No Content</pre></div>
+  </details>
+
+  <details class="ep"><summary><span class="m get">GET</span><span class="path">/invoices/{id}/pdf</span><span class="epdesc">Bon als PDF</span></summary>
+    <div class="epbody"><pre>200 OK — application/pdf (bestand)</pre></div>
+  </details>
+
+</div></details>
+
+<h3 class="rolehead">Monteur (MECHANIC)</h3>
 
 <!-- INSPECTIONS -->
 <details class="res"><summary>/inspections — keuringen <span class="rolebadge">MECHANIC</span></summary>
@@ -311,7 +364,10 @@ en een methode voor een voorbeeld in JSON.</p>
     "repairDate": "2026-03-15",
     "status": "COMPLETED",
     "notes": "Remblokken vervangen",
-    "partIds": [1, 2]
+    "parts": [
+      { "id": 1, "name": "Remblokken voor", "price": 59.95, "stockQuantity": 18 },
+      { "id": 2, "name": "Remblokken achter", "price": 54.95, "stockQuantity": 16 }
+    ]
   }
 ]</pre></div>
   </details>
@@ -324,7 +380,10 @@ en een methode voor een voorbeeld in JSON.</p>
   "repairDate": "2026-03-15",
   "status": "COMPLETED",
   "notes": "Remblokken vervangen",
-  "partIds": [1, 2]
+  "parts": [
+    { "id": 1, "name": "Remblokken voor", "price": 59.95, "stockQuantity": 18 },
+    { "id": 2, "name": "Remblokken achter", "price": 54.95, "stockQuantity": 16 }
+  ]
 }</pre></div>
   </details>
 
@@ -363,6 +422,8 @@ en een methode voor een voorbeeld in JSON.</p>
   </details>
 
 </div></details>
+
+<h3 class="rolehead">Backoffice (BACKOFFICE)</h3>
 
 <!-- PARTS -->
 <details class="res"><summary>/parts — onderdelen <span class="rolebadge">BACKOFFICE</span></summary>
@@ -418,61 +479,6 @@ en een methode voor een voorbeeld in JSON.</p>
   <details class="ep"><summary><span class="m delete">DELETE</span><span class="path">/parts/{id}</span><span class="epdesc">Verwijderen</span></summary>
     <div class="epbody"><pre>204 No Content</pre>
       <div class="note">Nog gekoppeld aan een reparatie → <code>409</code>.</div></div>
-  </details>
-
-</div></details>
-
-<!-- INVOICES -->
-<details class="res"><summary>/invoices — bonnen <span class="rolebadge">CASHIER</span></summary>
-<div class="res-body">
-
-  <details class="ep"><summary><span class="m get">GET</span><span class="path">/invoices</span><span class="epdesc">Alle bonnen</span></summary>
-    <div class="epbody"><div class="lbl">Response</div>
-<pre>[
-  {
-    "id": 1,
-    "repairId": 1,
-    "totalAmount": 139.03,
-    "vatAmount": 24.13,
-    "paymentStatus": "PAID"
-  }
-]</pre></div>
-  </details>
-
-  <details class="ep"><summary><span class="m get">GET</span><span class="path">/invoices/{id}</span><span class="epdesc">Eén bon</span></summary>
-    <div class="epbody"><div class="lbl">Response</div>
-<pre>{
-  "id": 1,
-  "repairId": 1,
-  "totalAmount": 139.03,
-  "vatAmount": 24.13,
-  "paymentStatus": "PAID"
-}</pre></div>
-  </details>
-
-  <details class="ep"><summary><span class="m post">POST</span><span class="path">/invoices</span><span class="epdesc">Bon genereren</span></summary>
-    <div class="epbody"><div class="lbl">Request</div>
-<pre>{
-  "repairId": 1,
-  "paymentStatus": "PENDING"
-}</pre>
-      <div class="note">Bedrag en btw worden server-side uit de onderdelen berekend. Bestaat er al een bon voor die reparatie → <code>409</code>.</div></div>
-  </details>
-
-  <details class="ep"><summary><span class="m patch">PATCH</span><span class="path">/invoices/{id}</span><span class="epdesc">Betaalstatus wijzigen</span></summary>
-    <div class="epbody"><div class="lbl">Request</div>
-<pre>{
-  "paymentStatus": "PAID"
-}</pre>
-      <div class="note">Alleen de betaalstatus is aanpasbaar; de bedragen liggen vast.</div></div>
-  </details>
-
-  <details class="ep"><summary><span class="m delete">DELETE</span><span class="path">/invoices/{id}</span><span class="epdesc">Verwijderen</span></summary>
-    <div class="epbody"><pre>204 No Content</pre></div>
-  </details>
-
-  <details class="ep"><summary><span class="m get">GET</span><span class="path">/invoices/{id}/pdf</span><span class="epdesc">Bon als PDF</span></summary>
-    <div class="epbody"><pre>200 OK — application/pdf (bestand)</pre></div>
   </details>
 
 </div></details>

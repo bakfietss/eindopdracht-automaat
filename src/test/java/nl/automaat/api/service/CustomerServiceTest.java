@@ -138,6 +138,19 @@ class CustomerServiceTest {
     }
 
     @Test
+    void patch_toExistingOtherEmail_throws() {
+        // Arrange
+        CustomerUpdateDto dto = new CustomerUpdateDto();
+        dto.setEmail("taken@example.com");
+        when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+        when(customerRepository.existsByEmail("taken@example.com")).thenReturn(true);
+        // Act + Assert
+        assertThatThrownBy(() -> customerService.patch(1L, dto))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(customerRepository, never()).save(any());
+    }
+
+    @Test
     void delete_existing_deletes() {
         when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
         customerService.delete(1L);

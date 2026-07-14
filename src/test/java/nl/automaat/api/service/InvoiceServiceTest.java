@@ -3,6 +3,7 @@ package nl.automaat.api.service;
 import jakarta.persistence.EntityNotFoundException;
 import nl.automaat.api.dto.InvoiceRequestDto;
 import nl.automaat.api.dto.InvoiceResponseDto;
+import nl.automaat.api.dto.InvoiceUpdateDto;
 import nl.automaat.api.model.Invoice;
 import nl.automaat.api.model.Part;
 import nl.automaat.api.model.PaymentStatus;
@@ -142,5 +143,36 @@ class InvoiceServiceTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getRepairId()).isEqualTo(1L);
+    }
+
+    @Test
+    void getById_existing_returnsDto() {
+        Invoice invoice = new Invoice();
+        invoice.setId(3L);
+        invoice.setRepair(repair);
+        invoice.setTotalAmount(new BigDecimal("103.39"));
+        invoice.setVatAmount(new BigDecimal("17.94"));
+        invoice.setPaymentStatus(PaymentStatus.PENDING);
+        when(invoiceRepository.findById(3L)).thenReturn(Optional.of(invoice));
+
+        InvoiceResponseDto result = invoiceService.getById(3L);
+
+        assertThat(result.getId()).isEqualTo(3L);
+        assertThat(result.getRepairId()).isEqualTo(1L);
+    }
+
+    @Test
+    void patch_changesPaymentStatus() {
+        Invoice invoice = new Invoice();
+        invoice.setId(8L);
+        invoice.setPaymentStatus(PaymentStatus.PENDING);
+        when(invoiceRepository.findById(8L)).thenReturn(Optional.of(invoice));
+        when(invoiceRepository.save(any(Invoice.class))).thenAnswer(i -> i.getArgument(0));
+
+        InvoiceUpdateDto dto = new InvoiceUpdateDto();
+        dto.setPaymentStatus(PaymentStatus.PAID);
+        InvoiceResponseDto result = invoiceService.patch(8L, dto);
+
+        assertThat(result.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
     }
 }
